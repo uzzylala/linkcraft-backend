@@ -1,4 +1,6 @@
 import express from "express";
+
+import { buildStats } from "../utils/stats.js";
 import { addLink, findByCode, getClicksByLinkId } from "../utils/db.js";
 import { generateCode } from "../utils/code.js";
 
@@ -35,13 +37,16 @@ router.post("/", (req, res) => {
   });
 });
 
-// temporary: replaced by the real stats endpoint (with auth) later
-router.get("/:code/clicks", (req, res) => {
+router.get("/:code/stats", (req, res) => {
   const link = findByCode(req.params.code);
   if (!link) {
     return res.status(404).json({ error: "Link not found." });
   }
-  res.json(getClicksByLinkId(link.id));
+  res.json({
+    code: link.code,
+    originalUrl: link.originalUrl,
+    ...buildStats(getClicksByLinkId(link.id)),
+  });
 });
 
 export default router;
