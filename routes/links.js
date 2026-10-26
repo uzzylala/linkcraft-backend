@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   addLink,
   findByCode,
@@ -9,6 +10,7 @@ import {
 import { generateCode } from "../utils/code.js";
 import { buildStats } from "../utils/stats.js";
 import authenticate from "../middleware/authenticate.js";
+import { createLinkLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
@@ -39,7 +41,7 @@ function findOwnedLink(code, userId) {
 // Every route in this file requires a valid token
 router.use(authenticate);
 
-router.post("/", (req, res) => {
+router.post("/", createLinkLimiter, (req, res) => {
   const { url, slug, label } = req.body;
 
   if (!url || !isValidUrl(url)) {
@@ -131,6 +133,23 @@ router.get("/:code/stats", (req, res) => {
     label: link.label,
     ...buildStats(getClicksByLinkId(link.id)),
   });
+});
+
+router.get("/:code/qr", async (req, res) => {
+  const link = findOwnedLink(req.params.code, req.user.id);
+  if (!link) {
+    return res.status(404).json({ error: "Link not found." });
+  }
+
+  const shortUrl = `${req.protocol}://${req.get("host")}/${link.code}`;
+
+  if (req.query.format === "svg") {
+    const svg = await QRCode.toString(shortUrl, { type: "svg", margin: 2 });
+    return res.type("image/svg+xml").send(svg);
+  }
+
+  const png = await QRCode.toBuffer(shortUrl, { width: 400, margin: 2 });
+  res.type("image/png").send(png);
 });
 
 export default router;
