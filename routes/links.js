@@ -1,7 +1,14 @@
 import express from "express";
-import { addLink, findByCode, updateLink, getClicksByLinkId } from "../utils/db.js";
+import {
+  addLink,
+  findByCode,
+  updateLink,
+  getLinksByUser,
+  getClicksByLinkId,
+} from "../utils/db.js";
 import { generateCode } from "../utils/code.js";
 import { buildStats } from "../utils/stats.js";
+import authenticate from "../middleware/authenticate.js";
 
 const router = express.Router();
 
@@ -20,6 +27,17 @@ function isValidUrl(value) {
 function isValidLabel(value) {
   return typeof value === "string" && value.trim().length > 0 && value.trim().length <= 50;
 }
+
+// Returns the link only if it exists AND belongs to this user.
+// Someone else's link looks exactly like a missing one (404, not 403),
+// so people can't discover which codes exist.
+function findOwnedLink(code, userId) {
+  const link = findByCode(code);
+  return link && link.userId === userId ? link : null;
+}
+
+// Every route in this file requires a valid token
+router.use(authenticate);
 
 router.post("/", (req, res) => {
   const { url, slug, label } = req.body;
@@ -54,7 +72,7 @@ router.post("/", (req, res) => {
     }
   }
 
-  const link = addLink(code, url, label ? label.trim() : null);
+  const link = addLink(req.user.id, code, url, label ? label.trim() : null);
 
   res.status(201).json({
     ...link,
@@ -62,8 +80,17 @@ router.post("/", (req, res) => {
   });
 });
 
+router.get("/", (req, res) => {
+  const mine = getLinksByUser(req.user.id).map((link) => ({
+    ...link,
+    shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
+    totalClicks: getClicksByLinkId(link.id).length,
+  }));
+  res.json(mine);
+});
+
 router.put("/:code", (req, res) => {
-  const link = findByCode(req.params.code);
+  const link = findOwnedLink(req.params.code, req.user.id);
   if (!link) {
     return res.status(404).json({ error: "Link not found." });
   }
@@ -94,7 +121,7 @@ router.put("/:code", (req, res) => {
 });
 
 router.get("/:code/stats", (req, res) => {
-  const link = findByCode(req.params.code);
+  const link = findOwnedLink(req.params.code, req.user.id);
   if (!link) {
     return res.status(404).json({ error: "Link not found." });
   }
