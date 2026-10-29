@@ -2,12 +2,7 @@
   "name": "linkcraft-backend",
   "version": "1.0.0",
   "description": "dynamic premium url-shortener with analytics",
-  "keywords": [
-    "[\"url\"",
-    "\"links\"",
-    "\"shorten\"",
-    "\"clicks]"
-  ],
+  "keywords": ["url", "links", "shorten", "clicks"],
   "license": "ISC",
   "author": "uzezi onogomuho",
   "type": "module",

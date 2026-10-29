@@ -21,7 +21,6 @@ app.use(helmet());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  console.log(res);
   res.json({ message: "URL shortener API" });
 });
 

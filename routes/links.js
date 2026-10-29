@@ -1,5 +1,5 @@
 import express from "express";
-
+import QRCode from "qrcode";
 import {
   addLink,
   findByCode,
@@ -36,8 +36,8 @@ function isValidLabel(value) {
 // Returns the link only if it exists AND belongs to this user.
 // Someone else's link looks exactly like a missing one (404, not 403),
 // so people can't discover which codes exist.
-function findOwnedLink(code, userId) {
-  const link = findByCode(code);
+async function findOwnedLink(code, userId) {
+  const link = await findByCode(code);
   return link && link.userId === userId ? link : null;
 }
 
@@ -45,7 +45,7 @@ function findOwnedLink(code, userId) {
 router.use(authenticate);
 
 //This route handles a POST request to create a new shortened URL
-router.post("/", createLinkLimiter, (req, res) => {
+router.post("/", createLinkLimiter, async (req, res) => {
   const { url, slug, label } = req.body;
 
   if (!url || !isValidUrl(url)) {
@@ -68,18 +68,18 @@ router.post("/", createLinkLimiter, (req, res) => {
     if (RESERVED_SLUGS.has(slug.toLowerCase())) {
       return res.status(400).json({ error: "That slug is reserved." });
     }
-    if (findByCode(slug)) {
+    if (await findByCode(slug)) {
       return res.status(409).json({ error: "That slug is unavailable." });
     }
     code = slug;
   } else {
     code = generateCode();
-    while (findByCode(code)) {
+    while (await findByCode(code)) {
       code = generateCode();
     }
   }
 
-  const link = addLink(req.user.id, code, url, label ? label.trim() : null);
+  const link = await addLink(req.user.id, code, url, label ? label.trim() : null);
 
   res.status(201).json({
     ...link,
@@ -89,7 +89,8 @@ router.post("/", createLinkLimiter, (req, res) => {
 
 //This route retrieves all the links belonging to the currently authenticated user and adds two extra properties to each link
 router.get("/", async (req, res) => {
-  const mine = getLinksByUser(req.user.id).map((link) => ({
+  const links = await getLinksByUser(req.user.id);
+  const mine = links.map((link) => ({
     ...link,
     shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
     totalClicks: getClicksByLinkId(link.id).length,
@@ -130,22 +131,23 @@ router.put("/:code", (req, res) => {
 });
 
 //This route returns statistics for a specific shortened link owned by the authenticated user.
-router.get("/:code/stats", (req, res) => {
-  const link = findOwnedLink(req.params.code, req.user.id);
+router.get("/:code/stats", async (req, res) => {
+  const link = await findOwnedLink(req.params.code, req.user.id);
   if (!link) {
     return res.status(404).json({ error: "Link not found." });
   }
+  const clicks = await getClicksByLinkId(link.id)
   res.json({
     code: link.code,
     originalUrl: link.originalUrl,
     label: link.label,
-    ...buildStats(getClicksByLinkId(link.id)),
+    ...buildStats(clicks),
   });
 });
 
 //This endpoint generates a QR code that contains that URL.
 router.get("/:code/qr", async (req, res) => {
-  const link = findOwnedLink(req.params.code, req.user.id);
+  const link = await findOwnedLink(req.params.code, req.user.id);
   if (!link) {
     return res.status(404).json({ error: "Link not found." });
   }

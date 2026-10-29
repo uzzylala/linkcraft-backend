@@ -5,7 +5,7 @@ const shared = {
   legacyHeaders: false,
 };
 
-// Brute-force protection for register and login: 10 requests per 10 minutes per IP
+// Brute-force protection for register and login: 5 requests per 10 minutes per IP
 export const authLimiter = rateLimit({
   ...shared,
   windowMs: 15 * 60 * 1000,
