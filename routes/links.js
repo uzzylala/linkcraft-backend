@@ -14,7 +14,10 @@ import { createLinkLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
+//makes sure that the slug must be initiated from these characters
 const SLUG_PATTERN = /^[A-Za-z0-9_-]{3,30}$/;
+
+//makes sure no values here are used when creating the slug
 const RESERVED_SLUGS = new Set(["api", "admin", "login", "register", "stats", "health"]);
 
 function isValidUrl(value) {
@@ -25,7 +28,7 @@ function isValidUrl(value) {
     return false;
   }
 }
-
+//prevents a user from submitting an empty label or a label containing only spaces
 function isValidLabel(value) {
   return typeof value === "string" && value.trim().length > 0 && value.trim().length <= 50;
 }
@@ -41,6 +44,7 @@ function findOwnedLink(code, userId) {
 // Every route in this file requires a valid token
 router.use(authenticate);
 
+//This route handles a POST request to create a new shortened URL
 router.post("/", createLinkLimiter, (req, res) => {
   const { url, slug, label } = req.body;
 
@@ -48,6 +52,7 @@ router.post("/", createLinkLimiter, (req, res) => {
     return res.status(400).json({ error: "A valid http or https URL is required." });
   }
 
+  //if the client provided a label title because label optional
   if (label !== undefined && !isValidLabel(label)) {
     return res.status(400).json({ error: "Label must be 1-50 characters." });
   }
@@ -64,7 +69,7 @@ router.post("/", createLinkLimiter, (req, res) => {
       return res.status(400).json({ error: "That slug is reserved." });
     }
     if (findByCode(slug)) {
-      return res.status(409).json({ error: "That slug is already taken." });
+      return res.status(409).json({ error: "That slug is unavailable." });
     }
     code = slug;
   } else {
@@ -82,15 +87,17 @@ router.post("/", createLinkLimiter, (req, res) => {
   });
 });
 
-router.get("/", (req, res) => {
+//This route retrieves all the links belonging to the currently authenticated user and adds two extra properties to each link
+router.get("/", async (req, res) => {
   const mine = getLinksByUser(req.user.id).map((link) => ({
     ...link,
     shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
     totalClicks: getClicksByLinkId(link.id).length,
   }));
-  res.json(mine);
+  res.status(200).json(mine);
 });
 
+//This route allows an authenticated user to update the destination URL or label of a link they own.
 router.put("/:code", (req, res) => {
   const link = findOwnedLink(req.params.code, req.user.id);
   if (!link) {
@@ -122,6 +129,7 @@ router.put("/:code", (req, res) => {
   res.json(updateLink(link.code, updates));
 });
 
+//This route returns statistics for a specific shortened link owned by the authenticated user.
 router.get("/:code/stats", (req, res) => {
   const link = findOwnedLink(req.params.code, req.user.id);
   if (!link) {
@@ -135,6 +143,7 @@ router.get("/:code/stats", (req, res) => {
   });
 });
 
+//This endpoint generates a QR code that contains that URL.
 router.get("/:code/qr", async (req, res) => {
   const link = findOwnedLink(req.params.code, req.user.id);
   if (!link) {

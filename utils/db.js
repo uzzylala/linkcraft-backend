@@ -62,3 +62,4 @@ export function addClick(linkId, data) {
 export function getClicksByLinkId(linkId) {
   return clicks.filter((c) => c.linkId === linkId);
 }
+
