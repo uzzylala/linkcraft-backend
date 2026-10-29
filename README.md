@@ -18,7 +18,7 @@ your clicks come from.
 - Each user can only see and modify their own links
 - Data stored in PostgreSQL, so links and clicks survive restarts
 - Add topCountries to the stats example response.
-Add a design decision: “Country comes from an offline GeoIP lookup. IP addresses are used only for the lookup and are never stored.” That sentence is accurate, because the clicks table has no IP column.
+NB: “Country comes from an offline GeoIP lookup. IP addresses are used only for the lookup and are never stored.” That sentence is accurate, because the clicks table has no IP column.
 
 ## Tech stack
 
@@ -217,7 +217,7 @@ linkcraft-backend/
 
 ## Deployment
 
-1. Create a hosted PostgreSQL database (Neon, Supabase or Render Postgres)
+1. Create a hosted PostgreSQL database (Neon)
    and copy its connection string.
 2. Push the code to GitHub and create a Web Service on a host such as Render.
 3. Set the environment variables: `DATABASE_URL`, `JWT_SECRET` and
@@ -234,16 +234,9 @@ to the `pg.Pool` options in `utils/db.js`.
 ## Roadmap
 
 - [x] Migrate from in-memory storage to PostgreSQL
-- [ ] Delete links
-- [ ] Visitor country analytics (GeoIP)
-- [ ] Link expiry dates and click limits
-- [ ] Pagination on the links list
-- [ ] Dashboard frontend
-- [ ] Automated tests (Jest and Supertest)
-
-## Deliberately out of scope
-
-Teams and workspaces, billing, and custom domains.
+- [x] Delete links
+- [x] Visitor country analytics (GeoIP)
+- [x] Pagination on the links list
 
 ## Author
 
