@@ -122,17 +122,38 @@ export async function findByCode(code) {
 }
 
 // Includes totalClicks in one query (no extra query per link)
-export async function getLinksByUser(userId) {
+// export async function getLinksByUser(userId) {
+//   const { rows } = await pool.query(
+//     `SELECT l.*, COUNT(c.id)::int AS total_clicks
+//      FROM links l
+//      LEFT JOIN clicks c ON c.link_id = l.id
+//      WHERE l.user_id = $1
+//      GROUP BY l.id
+//      ORDER BY l.created_at DESC`,
+//     [userId]
+//   );
+//   return rows.map(toLink);
+// }
+export async function getLinksByUser(userId, limit = 10, offset = 0) {
   const { rows } = await pool.query(
     `SELECT l.*, COUNT(c.id)::int AS total_clicks
      FROM links l
      LEFT JOIN clicks c ON c.link_id = l.id
      WHERE l.user_id = $1
      GROUP BY l.id
-     ORDER BY l.created_at DESC`,
-    [userId]
+     ORDER BY l.created_at DESC, l.id DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, limit, offset]
   );
   return rows.map(toLink);
+}
+
+export async function countLinksByUser(userId) {
+  const { rows } = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM links WHERE user_id = $1",
+    [userId]
+  );
+  return rows[0].count;
 }
 
 export async function addLink(userId, code, originalUrl, label = null) {

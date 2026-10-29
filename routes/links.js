@@ -7,6 +7,7 @@ import {
   deleteLink,
   getLinksByUser,
   getClicksByLinkId,
+  countLinksByUser 
 } from "../utils/db.js";
 import { generateCode } from "../utils/code.js";
 import { buildStats } from "../utils/stats.js";
@@ -100,14 +101,41 @@ router.delete("/:code", async (req, res) => {
 });
 
 //This route retrieves all the links belonging to the currently authenticated user and adds two extra properties to each link
+// router.get("/", async (req, res) => {
+//   const links = await getLinksByUser(req.user.id);
+//   const mine = links.map((link) => ({
+//     ...link,
+//     shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
+//     totalClicks: getClicksByLinkId(link.id).length,
+//   }));
+//   res.status(200).json(mine);
+// });
 router.get("/", async (req, res) => {
-  const links = await getLinksByUser(req.user.id);
-  const mine = links.map((link) => ({
-    ...link,
-    shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
-    totalClicks: getClicksByLinkId(link.id).length,
-  }));
-  res.status(200).json(mine);
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+  const offset = (page - 1) * limit;
+
+  const [links, total] = await Promise.all([
+    getLinksByUser(req.user.id, limit, offset),
+    countLinksByUser(req.user.id),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  res.status(200).json({
+    data: links.map((link) => ({
+      ...link,
+      shortUrl: `${req.protocol}://${req.get("host")}/${link.code}`,
+    })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  });
 });
 
 //This route allows an authenticated user to update the destination URL or label of a link they own.

@@ -86,6 +86,7 @@ npm start       # production
 | GET | `/api/links/:code/stats` | yes | Click analytics |
 | GET | `/api/links/:code/qr` | yes | QR code (`?format=svg` for SVG) |
 | GET | `/:code` | no | Redirect to the destination and record the click |
+| DELETE | `/api/links/:code` | YES | Delete a link and its click data |
 
 Send the token as `Authorization: Bearer <token>`.
 
