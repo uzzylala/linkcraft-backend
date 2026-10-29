@@ -28,5 +28,6 @@ export function buildStats(clicks) {
     devices: countBy(clicks, "deviceType"),
     browsers: countBy(clicks, "browser"),
     operatingSystems: countBy(clicks, "os"),
+    topCountries: countBy(clicks, "country")
   };
 }

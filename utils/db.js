@@ -182,3 +182,8 @@ export async function getClicksByLinkId(linkId) {
   );
   return rows.map(toClick);
 }
+
+export async function deleteLink(code) {
+  const { rowCount } = await pool.query("DELETE FROM links WHERE code = $1", [code]);
+  return rowCount > 0;
+}

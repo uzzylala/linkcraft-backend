@@ -1,4 +1,5 @@
 import { UAParser } from "ua-parser-js";
+import geoip from "geoip-lite";
 
 const PLATFORMS = {
   X: ["t.co", "twitter.com", "x.com"],
@@ -33,6 +34,12 @@ function detectPlatform(referrer, src) {
   }
 }
 
+function detectCountry(req) {
+  const ip = (req.ip || "").replace(/^::ffff:/, ""); // strip IPv4-mapped prefix
+  const geo = geoip.lookup(ip);
+  return geo ? geo.country : null; // two-letter code like "NG", "US"
+}
+
 export function buildClickData(req) {
   const userAgent = req.get("user-agent") || "";
   const referrer = req.get("referer") || null;
@@ -44,6 +51,6 @@ export function buildClickData(req) {
     deviceType: ua.device.type || "desktop",
     browser: ua.browser.name || "unknown",
     os: ua.os.name || "unknown",
-    country: null, // filled in later when we add geolocation
+    country: detectCountry(req), // filled in later when we add geolocation
   };
 }

@@ -87,6 +87,17 @@ router.post("/", createLinkLimiter, async (req, res) => {
   });
 });
 
+//This route allows an authenticated user to delete a link they own.
+router.delete("/:code", async (req, res) => {
+  const link = await findOwnedLink(req.params.code, req.user.id);
+  if (!link) {
+    return res.status(404).json({ error: "Link not found." });
+  }
+
+  await deleteLink(link.code);
+  res.status(204).send();
+});
+
 //This route retrieves all the links belonging to the currently authenticated user and adds two extra properties to each link
 router.get("/", async (req, res) => {
   const links = await getLinksByUser(req.user.id);
