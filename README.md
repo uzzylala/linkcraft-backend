@@ -81,7 +81,7 @@ npm start       # production
 | POST | `/api/auth/register` | no | Create an account, returns a token |
 | POST | `/api/auth/login` | no | Log in, returns a token |
 | POST | `/api/links` | yes | Create a link (`url`, optional `slug`, `label`) |
-| GET | `/api/links` | yes | List your links with click counts |
+| GET | `/api/links` | yes | List your links with click counts (?page=1&limit=10, max 50) |
 | PUT | `/api/links/:code` | yes | Update `url` and/or `label` |
 | GET | `/api/links/:code/stats` | yes | Click analytics |
 | GET | `/api/links/:code/qr` | yes | QR code (`?format=svg` for SVG) |
