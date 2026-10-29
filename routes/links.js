@@ -4,6 +4,7 @@ import {
   addLink,
   findByCode,
   updateLink,
+  deleteLink,
   getLinksByUser,
   getClicksByLinkId,
 } from "../utils/db.js";
@@ -95,7 +96,7 @@ router.delete("/:code", async (req, res) => {
   }
 
   await deleteLink(link.code);
-  res.status(204).send();
+  res.status(201).json({message: "link deleted"});
 });
 
 //This route retrieves all the links belonging to the currently authenticated user and adds two extra properties to each link
