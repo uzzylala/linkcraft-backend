@@ -302,9 +302,6 @@ request after a quiet period can be slow.
 - [x] Visitor country analytics (GeoIP)
 - [x] Pagination on the links list
 
-Possible next steps: link expiry dates and click limits, automated tests
-(Jest and Supertest), and a dashboard frontend.
-
 ## Author
 
 Uzezi Onogomuho
